@@ -1,5 +1,6 @@
 from src.config import DATA_DIR
 from src.hyperapi_client import HyperAPIClientWrapper
+from src.normalizer import extract_vendor_master
 from src.parser import parse_documents, split_pdf_into_chunks
 
 
@@ -53,6 +54,17 @@ def main() -> None:
         print(f"  Config error: {exc}")
     except RuntimeError as exc:
         print(f"  API error: {exc}")
+
+    # --- Vendor Master extraction ---
+    print("\n" + "=" * 50)
+    print("Extracting Vendor Master from pages 3–4...")
+    vendors = extract_vendor_master(parsed)
+    print(f"  Total vendors extracted: {len(vendors)}")
+    print("\n  First 5 vendors:")
+    for v in vendors[:5]:
+        print(f"    [{v.vendor_id}] {v.name}")
+        print(f"         GSTIN: {v.gstin}  |  State: {v.state}")
+        print(f"         Bank:  {v.bank}  |  IFSC: {v.ifsc}")
 
 
 if __name__ == "__main__":

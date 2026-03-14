@@ -6,8 +6,9 @@ class Vendor(BaseModel):
     vendor_id: Optional[str] = None
     name: str
     gstin: Optional[str] = None
-    ifsc: Optional[str] = None
     state: Optional[str] = None
+    bank: Optional[str] = None
+    ifsc: Optional[str] = None
     source_pages: list[int] = Field(default_factory=list)
 
 
