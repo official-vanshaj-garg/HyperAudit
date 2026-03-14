@@ -1,7 +1,7 @@
 from src.config import DATA_DIR
 from src.hyperapi_client import HyperAPIClientWrapper
 from src.normalizer import extract_vendor_master
-from src.parser import parse_documents, split_pdf_into_chunks
+from src.parser import extract_page_doc_refs, parse_documents, split_pdf_into_chunks
 from src.rules.basic_rules import run_basic_rules
 from src.rules.vendor_rules import run_vendor_rules
 
@@ -25,6 +25,17 @@ def main() -> None:
         print("-" * 50)
         print(f"Page {page['page_number']} | chars: {page['char_count']}")
         print(page["text"][:500].strip() or "[NO TEXT FOUND]")
+
+    # --- Document reference extraction ---
+    print("\n" + "=" * 50)
+    print("Extracting document references...")
+    page_refs = extract_page_doc_refs(parsed["pages"])
+    ref_by_page = {r["page_number"]: r["doc_refs"] for r in page_refs}
+
+    print(f"  Pages with doc refs: {len(page_refs)}")
+    print("\n  First 20 pages with refs:")
+    for entry in page_refs[:20]:
+        print(f"    Page {entry['page_number']:4d}: {', '.join(entry['doc_refs'])}")
 
     # --- Chunking test ---
     print("\n" + "=" * 50)
@@ -90,6 +101,14 @@ def main() -> None:
     print("\n  Sample findings (up to 3):")
     for f in basic_findings[:3]:
         print(f"    [{f.finding_id}] {f.description}")
+
+    # --- Doc refs for finding pages ---
+    print("\n  Doc refs on finding pages:")
+    for f in basic_findings:
+        for pg in f.pages:
+            refs = ref_by_page.get(pg, [])
+            label = ", ".join(refs) if refs else "[none found]"
+            print(f"    Page {pg:4d} ({f.category}): {label}")
 
 
 if __name__ == "__main__":
