@@ -1,8 +1,10 @@
-from src.config import DATA_DIR
+from src.config import DATA_DIR, OUTPUTS_DIR
+from src.exporter import export_findings
 from src.hyperapi_client import HyperAPIClientWrapper
 from src.normalizer import extract_vendor_master
 from src.parser import extract_page_doc_refs, parse_documents, split_pdf_into_chunks
 from src.rules.basic_rules import run_basic_rules
+from src.rules.crossdoc_rules import run_crossdoc_rules
 from src.rules.vendor_rules import run_vendor_rules
 
 
@@ -109,6 +111,44 @@ def main() -> None:
             refs = ref_by_page.get(pg, [])
             label = ", ".join(refs) if refs else "[none found]"
             print(f"    Page {pg:4d} ({f.category}): {label}")
+
+    # --- Export submission JSON ---
+    print("\n" + "=" * 50)
+    print("Running cross-document rules (phantom_po_reference)...")
+    crossdoc_findings = run_crossdoc_rules(parsed["pages"])
+    from collections import Counter as _C2
+    print(f"  Total candidate findings: {len(crossdoc_findings)}")
+    for cat, n in sorted(_C2(f.category for f in crossdoc_findings).items()):
+        print(f"    {cat}: {n}")
+    print("\n  Sample findings (up to 3):")
+    for f in crossdoc_findings[:3]:
+        print(f"    [{f.finding_id}] {f.description}")
+
+    # --- Export submission JSON ---
+    print("\n" + "=" * 50)
+    print("Exporting submission JSON...")
+
+    # Export arithmetic_error and invalid_date — both have clean reported_value fields
+    # Also export phantom_po_reference — reported_value is the PO ID, doc_refs are clean
+    exportable = [
+        f for f in basic_findings
+        if f.category in ("arithmetic_error", "invalid_date")
+    ] + crossdoc_findings
+
+    output_path = OUTPUTS_DIR / "submission.json"
+    total_exported = export_findings(
+        team_id="hyperaudit",
+        findings=exportable,
+        ref_by_page=ref_by_page,
+        output_path=output_path,
+    )
+
+    from collections import Counter as _Counter
+    export_counts = _Counter(f.category for f in exportable)
+    print(f"  Total exported findings: {total_exported}")
+    for category, count in sorted(export_counts.items()):
+        print(f"    {category}: {count}")
+    print(f"  Output: {output_path}")
 
 
 if __name__ == "__main__":
