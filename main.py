@@ -2,6 +2,7 @@ from src.config import DATA_DIR
 from src.hyperapi_client import HyperAPIClientWrapper
 from src.normalizer import extract_vendor_master
 from src.parser import parse_documents, split_pdf_into_chunks
+from src.rules.basic_rules import run_basic_rules
 from src.rules.vendor_rules import run_vendor_rules
 
 
@@ -77,6 +78,18 @@ def main() -> None:
     print(f"  Total candidate findings: {len(findings)}")
     for category, count in sorted(counts.items()):
         print(f"    {category}: {count}")
+
+    # --- Basic rules (invalid_date, arithmetic_error) ---
+    print("\n" + "=" * 50)
+    print("Running basic rules (invalid_date, arithmetic_error)...")
+    basic_findings = run_basic_rules(parsed["pages"])
+    basic_counts = Counter(f.category for f in basic_findings)
+    print(f"  Total candidate findings: {len(basic_findings)}")
+    for category, count in sorted(basic_counts.items()):
+        print(f"    {category}: {count}")
+    print("\n  Sample findings (up to 3):")
+    for f in basic_findings[:3]:
+        print(f"    [{f.finding_id}] {f.description}")
 
 
 if __name__ == "__main__":
