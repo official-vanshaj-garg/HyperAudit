@@ -129,7 +129,7 @@ def main() -> None:
     print("Exporting submission JSON...")
 
     # Export arithmetic_error and invalid_date — both have clean reported_value fields
-    # Also export phantom_po_reference — reported_value is the PO ID, doc_refs are clean
+    # Also export phantom_po_reference and po_invoice_mismatch — all fields are clean
     exportable = [
         f for f in basic_findings
         if f.category in ("arithmetic_error", "invalid_date")
