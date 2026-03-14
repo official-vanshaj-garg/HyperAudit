@@ -1,4 +1,5 @@
 from src.config import DATA_DIR
+from src.hyperapi_client import HyperAPIClientWrapper
 from src.parser import parse_documents, split_pdf_into_chunks
 
 
@@ -29,6 +30,29 @@ def main() -> None:
     print(f"\nCreated {len(chunks)} chunk(s):")
     for chunk in chunks:
         print(f"  {chunk['chunk_file'].name}  (pages {chunk['start_page']}–{chunk['end_page']})")
+
+    # --- HyperAPI smoke test (first chunk only) ---
+    print("\n" + "=" * 50)
+    print("HyperAPI smoke test on first chunk...")
+    first_chunk = chunks[0]
+    try:
+        wrapper = HyperAPIClientWrapper()
+        response = wrapper.parse(first_chunk["chunk_file"])
+
+        print(f"  File   : {first_chunk['chunk_file'].name}")
+        print(f"  Status : SUCCESS")
+        print(f"  Keys   : {list(response.keys())}")
+
+        # Print OCR text length if present under common key names
+        for key in ("text", "ocr_text", "content", "ocr"):
+            if key in response and isinstance(response[key], str):
+                print(f"  OCR length ({key!r}): {len(response[key])} chars")
+                break
+
+    except ValueError as exc:
+        print(f"  Config error: {exc}")
+    except RuntimeError as exc:
+        print(f"  API error: {exc}")
 
 
 if __name__ == "__main__":
