@@ -2,6 +2,7 @@ from src.config import DATA_DIR
 from src.hyperapi_client import HyperAPIClientWrapper
 from src.normalizer import extract_vendor_master
 from src.parser import parse_documents, split_pdf_into_chunks
+from src.rules.vendor_rules import run_vendor_rules
 
 
 def main() -> None:
@@ -65,6 +66,17 @@ def main() -> None:
         print(f"    [{v.vendor_id}] {v.name}")
         print(f"         GSTIN: {v.gstin}  |  State: {v.state}")
         print(f"         Bank:  {v.bank}  |  IFSC: {v.ifsc}")
+
+    # --- Vendor rules ---
+    print("\n" + "=" * 50)
+    print("Running vendor anomaly rules...")
+    findings = run_vendor_rules(parsed["pages"], vendors)
+
+    from collections import Counter
+    counts = Counter(f.category for f in findings)
+    print(f"  Total candidate findings: {len(findings)}")
+    for category, count in sorted(counts.items()):
+        print(f"    {category}: {count}")
 
 
 if __name__ == "__main__":
